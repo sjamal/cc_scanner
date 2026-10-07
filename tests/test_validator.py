@@ -46,6 +46,18 @@ class TestDetectCardBrand(unittest.TestCase):
             with self.subTest(number=number):
                 self.assertEqual(detect_card_brand(number), brand)
 
+    def test_mastercard_ranges(self):
+        cases = {
+            "5100000000000008": "Mastercard",
+            "2720999999999996": "Mastercard",
+            "5600000000000003": "Unknown Card Network",
+            "2220999999999991": "Unknown Card Network",
+            "2721000000000004": "Unknown Card Network",
+        }
+        for number, brand in cases.items():
+            with self.subTest(number=number):
+                self.assertEqual(detect_card_brand(number), brand)
+
     def test_amex_prefix_requires_15_digits(self):
         self.assertEqual(detect_card_brand("3782822463100050"), "Unknown Card Network")
 

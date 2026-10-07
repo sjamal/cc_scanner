@@ -18,7 +18,7 @@ def detect_card_brand(number: str) -> str:
         return "American Express"
     elif number.startswith('4'):
         return "Visa"
-    elif re.match(r'^5[1-5]|^2[2-7]', number):
+    elif re.match(r'^5[1-5]', number) or (number[:4].isdigit() and 2221 <= int(number[:4]) <= 2720):
         return "Mastercard"
     elif number.startswith('6011') or number.startswith('65'):
         return "Discover"
