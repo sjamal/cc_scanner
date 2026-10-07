@@ -75,6 +75,9 @@ print(redact_text(text))
 | `detect_card_brand(number)` | `str` | Identifies the network from the prefix: `"Visa"`, `"Mastercard"`, `"American Express"`, `"Discover"` or `"Unknown Card Network"`. |
 | `analyze_context(original_match)` | `str` | Describes how the number was formatted (raw, dashes, spaces, Amex-style spaces or mixed). |
 
+> [!NOTE]
+> The scanner checks 13–19 digit numbers, the full range of card lengths networks issue. Earlier versions only checked 15–16 digits. The wider range catches more real cards, such as 14-digit Diners Club and 19-digit Visa numbers. It also means more non-card numbers (account, tracking or reference numbers) that happen to pass the Luhn check may be flagged and masked.
+
 ### `cardscan.masker`
 
 | Function | Returns | Description |
