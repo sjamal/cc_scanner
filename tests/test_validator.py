@@ -64,6 +64,23 @@ class TestDetectCardBrand(unittest.TestCase):
     def test_unknown_prefix(self):
         self.assertEqual(detect_card_brand("9876543210123456"), "Unknown Card Network")
 
+    def test_additional_brands(self):
+        cases = {
+            "6440000000000005": "Discover",
+            "6221260000000000": "Discover",
+            "6229250000000003": "Discover",
+            "6221250000000001": "UnionPay",
+            "6200000000000005": "UnionPay",
+            "3528000000000007": "JCB",
+            "3589000000000003": "JCB",
+            "30000000000004": "Diners Club",
+            "36000000000008": "Diners Club",
+            "38000000000006": "Diners Club",
+        }
+        for number, brand in cases.items():
+            with self.subTest(number=number):
+                self.assertEqual(detect_card_brand(number), brand)
+
 
 class TestAnalyzeContext(unittest.TestCase):
     def test_styles(self):

@@ -22,6 +22,14 @@ def detect_card_brand(number: str) -> str:
         return "Mastercard"
     elif number.startswith('6011') or number.startswith('65'):
         return "Discover"
+    elif re.match(r'^64[4-9]', number) or (number[:6].isdigit() and 622126 <= int(number[:6]) <= 622925):
+        return "Discover"
+    elif number[:4].isdigit() and 3528 <= int(number[:4]) <= 3589:
+        return "JCB"
+    elif re.match(r'^30[0-5]|^3[689]', number):
+        return "Diners Club"
+    elif number.startswith('62'):
+        return "UnionPay"
     return "Unknown Card Network"
 
 def analyze_context(original_match: str) -> str:
