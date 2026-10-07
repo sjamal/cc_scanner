@@ -156,5 +156,18 @@ class TestScanTextAdvanced(unittest.TestCase):
                 self.assertEqual([c["cleaned"] for c in scan_text_advanced(text)], expected)
 
 
+class TestKnownBrandsOnly(unittest.TestCase):
+    # Luhn-valid, but no card network uses the 9 prefix.
+    UNKNOWN = "9000000000000001"
+
+    def test_unknown_brands_reported_by_default(self):
+        cards = scan_text_advanced(f"{VISA} and {self.UNKNOWN}")
+        self.assertEqual([c["cleaned"] for c in cards], [VISA, self.UNKNOWN])
+
+    def test_unknown_brands_dropped_when_enabled(self):
+        cards = scan_text_advanced(f"{VISA} and {self.UNKNOWN}", known_brands_only=True)
+        self.assertEqual([c["cleaned"] for c in cards], [VISA])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -61,7 +61,7 @@ def analyze_context(original_match: str) -> str:
         return "Amex Style Spaces" if original_match.count(' ') == 2 else "Standard Spaces"
     return "Raw Continuous Block (No separators)"
 
-def scan_text_advanced(text: str) -> list:
+def scan_text_advanced(text: str, known_brands_only: bool = False) -> list:
     """V2: Scans text for numbers hidden anywhere, returning structural context dicts."""
     found_potentials = _find_candidates(text)
     
@@ -79,5 +79,7 @@ def scan_text_advanced(text: str) -> list:
                     "brand": detect_card_brand(cleaned_number),
                     "style": analyze_context(potential)
                 })
+    if known_brands_only:
+        return [card for card in valid_cards if card["brand"] != "Unknown Card Network"]
     return valid_cards
 
