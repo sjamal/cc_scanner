@@ -12,7 +12,7 @@ Out: But user typed cardisXXXXXXXXXXXX1111now and amex XXXX-XXXXXX-X0005 togethe
 - Finds card numbers even when they're attached to surrounding words (`cardis4111…now`).
 - Handles raw digits as well as space- and dash-separated formats.
 - Checks every candidate with the [Luhn algorithm](https://en.wikipedia.org/wiki/Luhn_algorithm), so ordinary serial and order numbers aren't masked.
-- Identifies the card network (Visa, Mastercard, American Express, Discover).
+- Identifies the card network (Visa, Mastercard, American Express, Discover, JCB, Diners Club, UnionPay).
 - Masks every digit except the last four and keeps the original spaces and dashes.
 
 ## Project layout
@@ -72,7 +72,7 @@ print(redact_text(text))
 |---|---|---|
 | `scan_text_advanced(text)` | `list[dict]` | Finds Luhn-valid 15–16 digit card numbers in `text`. Each result has `original` (the text as it appeared), `cleaned` (digits only), `brand` and `style`. Repeated numbers are reported once. |
 | `is_luhn_valid(card_number)` | `bool` | Runs the Luhn checksum. Non-digit characters are ignored. |
-| `detect_card_brand(number)` | `str` | Identifies the network from the prefix: `"Visa"`, `"Mastercard"`, `"American Express"`, `"Discover"` or `"Unknown Card Network"`. |
+| `detect_card_brand(number)` | `str` | Identifies the network from the prefix: `"Visa"`, `"Mastercard"`, `"American Express"`, `"Discover"`, `"JCB"`, `"Diners Club"`, `"UnionPay"` or `"Unknown Card Network"`. |
 | `analyze_context(original_match)` | `str` | Describes how the number was formatted (raw, dashes, spaces, Amex-style spaces or mixed). |
 
 ### `cardscan.masker`
@@ -105,7 +105,6 @@ All card numbers in the tests and demo are published network test numbers, not r
 
 - Mastercard's 2-series check accepts `22`–`27`, while the real range is `2221`–`2720`.
 
-- Discover's `644`–`649` and `622126`–`622925` ranges aren't recognised. JCB, Diners Club and UnionPay come back as `Unknown Card Network`.
 
 - Detection relies on a regex plus the Luhn check, so a long number that happens to pass Luhn (about 1 in 10 random numbers) will be masked even if it isn't a card.
 
