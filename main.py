@@ -1,9 +1,9 @@
-from cc_scanner.validator import scan_text_advanced
-from cc_scanner.masker import redact_text
+from cardscan.validator import scan_text_advanced
+from cardscan.masker import redact_text
 
 sample_chat = (
     "Order serial is 9876543210123456 (fake). "
-    "But user typed cardis4111111111111111now and amex 3782-827364-81006 together."
+    "But user typed cardis4111111111111111now and amex 3782-822463-10005 together."
 )
 
 print("--- 🔍 DISCOVERY ---")
@@ -12,4 +12,3 @@ for cc in scan_text_advanced(sample_chat):
 
 print("\n--- 🛡️ REDACTION OUTPUT ---")
 print(redact_text(sample_chat))
-

@@ -1,5 +1,4 @@
-import re
-from cc_scanner.validator import scan_text_advanced
+from .validator import scan_text_advanced
 
 def mask_card_number(original_match: str) -> str:
     """Masks digits while perfectly preserving the user's specific delimiter spacing layout."""
