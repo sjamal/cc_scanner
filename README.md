@@ -103,7 +103,6 @@ All card numbers in the tests and demo are published network test numbers, not r
 
 - Only 15- and 16-digit numbers are reported. Valid 13- and 19-digit cards (some Visa, Maestro and UnionPay numbers) are skipped.
 
-- Mastercard's 2-series check accepts `22`–`27`, while the real range is `2221`–`2720`.
 
 - Discover's `644`–`649` and `622126`–`622925` ranges aren't recognised. JCB, Diners Club and UnionPay come back as `Unknown Card Network`.
 
