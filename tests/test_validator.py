@@ -130,10 +130,30 @@ class TestScanTextAdvanced(unittest.TestCase):
         cards = scan_text_advanced(f"{VISA} again {VISA}")
         self.assertEqual(len(cards), 1)
 
-    def test_only_15_and_16_digit_numbers_are_reported(self):
-        # 13- and 19-digit Visa test numbers pass Luhn but are outside the accepted length.
-        self.assertEqual(scan_text_advanced("4222222222222"), [])
-        self.assertEqual(scan_text_advanced("4111111111111111110"), [])
+    def test_reports_13_to_19_digit_numbers(self):
+        for number in ("4222222222222", "4111111111111111110"):
+            with self.subTest(number=number):
+                [card] = scan_text_advanced(f"card {number} here")
+                self.assertEqual(card["cleaned"], number)
+
+    def test_rejects_numbers_outside_13_to_19_digits(self):
+        # Both pass Luhn but are too short or too long to be card numbers.
+        self.assertEqual(scan_text_advanced("411111111117"), [])
+        self.assertEqual(scan_text_advanced("41111111111111111107"), [])
+
+    def test_finds_formatted_19_digit_number(self):
+        [card] = scan_text_advanced("card 4111 1111 1111 1111 110 here")
+        self.assertEqual(card["original"], "4111 1111 1111 1111 110")
+
+    def test_splits_adjacent_numbers(self):
+        cases = {
+            f"{VISA} {MASTERCARD}": [VISA, MASTERCARD],
+            "4111 1111 1111 1111 5555 5555 5555 4444": [VISA, MASTERCARD],
+            f"ref 1234 {VISA}": [VISA],
+        }
+        for text, expected in cases.items():
+            with self.subTest(text=text):
+                self.assertEqual([c["cleaned"] for c in scan_text_advanced(text)], expected)
 
 
 if __name__ == "__main__":
