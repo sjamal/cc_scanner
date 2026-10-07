@@ -82,6 +82,15 @@ print(redact_text(text))
 | `redact_text(text)` | `str` | Returns `text` with every detected card number masked. |
 | `mask_card_number(original_match)` | `str` | Replaces every digit except the last four with `X`. Separators are left in place. |
 
+### Reducing false positives
+
+`scan_text_advanced` and `redact_text` both accept `known_brands_only=True`. With it set, numbers whose prefix doesn't match a known card network are ignored. This cuts down on order numbers and serials that happen to pass the Luhn check, but cards from networks the scanner doesn't recognise will be left unmasked.
+
+```python
+redact_text("visa 4111111111111111 serial 9000000000000001", known_brands_only=True)
+# 'visa XXXXXXXXXXXX1111 serial 9000000000000001'
+```
+
 ## Running the tests
 
 The tests use the standard library's `unittest`, so you don't need to install anything:
@@ -107,7 +116,7 @@ All card numbers in the tests and demo are published network test numbers, not r
 
 - Discover's `644`–`649` and `622126`–`622925` ranges aren't recognised. JCB, Diners Club and UnionPay come back as `Unknown Card Network`.
 
-- Detection relies on a regex plus the Luhn check, so a long number that happens to pass Luhn (about 1 in 10 random numbers) will be masked even if it isn't a card.
+- Detection relies on a regex plus the Luhn check, so by default a long number that happens to pass Luhn (about 1 in 10 random numbers) will be masked even if it isn't a card. Use `known_brands_only=True` to narrow this (see [Reducing false positives](#reducing-false-positives)).
 
 ## License
 
