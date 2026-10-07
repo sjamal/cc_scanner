@@ -18,11 +18,38 @@ def detect_card_brand(number: str) -> str:
         return "American Express"
     elif number.startswith('4'):
         return "Visa"
-    elif re.match(r'^5[1-5]|^2[2-7]', number):
+    elif re.match(r'^5[1-5]', number) or (number[:4].isdigit() and 2221 <= int(number[:4]) <= 2720):
         return "Mastercard"
     elif number.startswith('6011') or number.startswith('65'):
         return "Discover"
+    elif re.match(r'^64[4-9]', number) or (number[:6].isdigit() and 622126 <= int(number[:6]) <= 622925):
+        return "Discover"
+    elif number[:4].isdigit() and 3528 <= int(number[:4]) <= 3589:
+        return "JCB"
+    elif re.match(r'^30[0-5]|^3[689]', number):
+        return "Diners Club"
+    elif number.startswith('62'):
+        return "UnionPay"
     return "Unknown Card Network"
+
+def _find_candidates(text: str) -> list:
+    """Splits separator-joined digit runs into the longest Luhn-valid 13-19 digit spans of whole digit groups."""
+    candidates = []
+    for run in re.finditer(r'\d(?:[ -]*\d)*', text):
+        run_text = run.group()
+        groups = [m.span() for m in re.finditer(r'\d+', run_text)]
+        start = 0
+        while start < len(groups):
+            for end in range(len(groups) - 1, start - 1, -1):
+                candidate = run_text[groups[start][0]:groups[end][1]]
+                digit_count = sum(c.isdigit() for c in candidate)
+                if 13 <= digit_count <= 19 and is_luhn_valid(candidate):
+                    candidates.append(candidate)
+                    start = end + 1
+                    break
+            else:
+                start += 1
+    return candidates
 
 def analyze_context(original_match: str) -> str:
     """Deduces how the user formatted their input context."""
@@ -34,17 +61,16 @@ def analyze_context(original_match: str) -> str:
         return "Amex Style Spaces" if original_match.count(' ') == 2 else "Standard Spaces"
     return "Raw Continuous Block (No separators)"
 
-def scan_text_advanced(text: str) -> list:
+def scan_text_advanced(text: str, known_brands_only: bool = False) -> list:
     """V2: Scans text for numbers hidden anywhere, returning structural context dicts."""
-    cc_pattern = re.compile(r'(?:\d[ -]*?){13,19}')
-    found_potentials = cc_pattern.findall(text)
+    found_potentials = _find_candidates(text)
     
     valid_cards = []
     processed = set()
 
     for potential in found_potentials:
         cleaned_number = re.sub(r'\D', '', potential)
-        if 15 <= len(cleaned_number) <= 16 and cleaned_number not in processed:
+        if 13 <= len(cleaned_number) <= 19 and cleaned_number not in processed:
             if is_luhn_valid(cleaned_number):
                 processed.add(cleaned_number)
                 valid_cards.append({
@@ -53,5 +79,7 @@ def scan_text_advanced(text: str) -> list:
                     "brand": detect_card_brand(cleaned_number),
                     "style": analyze_context(potential)
                 })
+    if known_brands_only:
+        return [card for card in valid_cards if card["brand"] != "Unknown Card Network"]
     return valid_cards
 

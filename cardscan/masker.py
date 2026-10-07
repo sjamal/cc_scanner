@@ -20,9 +20,9 @@ def mask_card_number(original_match: str) -> str:
             
     return "".join(masked_chars)
 
-def redact_text(text: str) -> str:
+def redact_text(text: str, known_brands_only: bool = False) -> str:
     """Scans raw blocks, calls validator core dependency, and safely scrubs leaked numbers."""
-    valid_cards = scan_text_advanced(text)
+    valid_cards = scan_text_advanced(text, known_brands_only=known_brands_only)
     redacted_text = text
     
     for card in valid_cards:

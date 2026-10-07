@@ -46,11 +46,40 @@ class TestDetectCardBrand(unittest.TestCase):
             with self.subTest(number=number):
                 self.assertEqual(detect_card_brand(number), brand)
 
+    def test_mastercard_ranges(self):
+        cases = {
+            "5100000000000008": "Mastercard",
+            "2720999999999996": "Mastercard",
+            "5600000000000003": "Unknown Card Network",
+            "2220999999999991": "Unknown Card Network",
+            "2721000000000004": "Unknown Card Network",
+        }
+        for number, brand in cases.items():
+            with self.subTest(number=number):
+                self.assertEqual(detect_card_brand(number), brand)
+
     def test_amex_prefix_requires_15_digits(self):
         self.assertEqual(detect_card_brand("3782822463100050"), "Unknown Card Network")
 
     def test_unknown_prefix(self):
         self.assertEqual(detect_card_brand("9876543210123456"), "Unknown Card Network")
+
+    def test_additional_brands(self):
+        cases = {
+            "6440000000000005": "Discover",
+            "6221260000000000": "Discover",
+            "6229250000000003": "Discover",
+            "6221250000000001": "UnionPay",
+            "6200000000000005": "UnionPay",
+            "3528000000000007": "JCB",
+            "3589000000000003": "JCB",
+            "30000000000004": "Diners Club",
+            "36000000000008": "Diners Club",
+            "38000000000006": "Diners Club",
+        }
+        for number, brand in cases.items():
+            with self.subTest(number=number):
+                self.assertEqual(detect_card_brand(number), brand)
 
 
 class TestAnalyzeContext(unittest.TestCase):
@@ -101,10 +130,43 @@ class TestScanTextAdvanced(unittest.TestCase):
         cards = scan_text_advanced(f"{VISA} again {VISA}")
         self.assertEqual(len(cards), 1)
 
-    def test_only_15_and_16_digit_numbers_are_reported(self):
-        # 13- and 19-digit Visa test numbers pass Luhn but are outside the accepted length.
-        self.assertEqual(scan_text_advanced("4222222222222"), [])
-        self.assertEqual(scan_text_advanced("4111111111111111110"), [])
+    def test_reports_13_to_19_digit_numbers(self):
+        for number in ("4222222222222", "4111111111111111110"):
+            with self.subTest(number=number):
+                [card] = scan_text_advanced(f"card {number} here")
+                self.assertEqual(card["cleaned"], number)
+
+    def test_rejects_numbers_outside_13_to_19_digits(self):
+        # Both pass Luhn but are too short or too long to be card numbers.
+        self.assertEqual(scan_text_advanced("411111111117"), [])
+        self.assertEqual(scan_text_advanced("41111111111111111107"), [])
+
+    def test_finds_formatted_19_digit_number(self):
+        [card] = scan_text_advanced("card 4111 1111 1111 1111 110 here")
+        self.assertEqual(card["original"], "4111 1111 1111 1111 110")
+
+    def test_splits_adjacent_numbers(self):
+        cases = {
+            f"{VISA} {MASTERCARD}": [VISA, MASTERCARD],
+            "4111 1111 1111 1111 5555 5555 5555 4444": [VISA, MASTERCARD],
+            f"ref 1234 {VISA}": [VISA],
+        }
+        for text, expected in cases.items():
+            with self.subTest(text=text):
+                self.assertEqual([c["cleaned"] for c in scan_text_advanced(text)], expected)
+
+
+class TestKnownBrandsOnly(unittest.TestCase):
+    # Luhn-valid, but no card network uses the 9 prefix.
+    UNKNOWN = "9000000000000001"
+
+    def test_unknown_brands_reported_by_default(self):
+        cards = scan_text_advanced(f"{VISA} and {self.UNKNOWN}")
+        self.assertEqual([c["cleaned"] for c in cards], [VISA, self.UNKNOWN])
+
+    def test_unknown_brands_dropped_when_enabled(self):
+        cards = scan_text_advanced(f"{VISA} and {self.UNKNOWN}", known_brands_only=True)
+        self.assertEqual([c["cleaned"] for c in cards], [VISA])
 
 
 if __name__ == "__main__":

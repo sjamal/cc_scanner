@@ -43,6 +43,17 @@ class TestRedactText(unittest.TestCase):
     def test_text_without_cards_is_unchanged(self):
         self.assertEqual(redact_text("hello world"), "hello world")
 
+    def test_known_brands_only_leaves_unknown_numbers(self):
+        text = "visa 4111111111111111 serial 9000000000000001"
+        self.assertEqual(
+            redact_text(text, known_brands_only=True),
+            "visa XXXXXXXXXXXX1111 serial 9000000000000001",
+        )
+        self.assertEqual(
+            redact_text(text),
+            "visa XXXXXXXXXXXX1111 serial XXXXXXXXXXXX0001",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -11,8 +11,8 @@ Out: But user typed cardisXXXXXXXXXXXX1111now and amex XXXX-XXXXXX-X0005 togethe
 
 - Finds card numbers even when they're attached to surrounding words (`cardis4111…now`).
 - Handles raw digits as well as space- and dash-separated formats.
-- Checks every candidate with the [Luhn algorithm](https://en.wikipedia.org/wiki/Luhn_algorithm), so ordinary serial and order numbers aren't masked.
-- Identifies the card network (Visa, Mastercard, American Express, Discover).
+- Checks every candidate with the [Luhn algorithm](https://en.wikipedia.org/wiki/Luhn_algorithm), so most ordinary serial and order numbers aren't masked.
+- Identifies the card network (Visa, Mastercard, American Express, Discover, JCB, Diners Club, UnionPay).
 - Masks every digit except the last four and keeps the original spaces and dashes.
 
 ## Project layout
@@ -21,7 +21,7 @@ Out: But user typed cardisXXXXXXXXXXXX1111now and amex XXXX-XXXXXX-X0005 togethe
 cc_scanner/
 ├── cardscan/
 │   ├── __init__.py    # Public API re-exports
-│   ├── validator.py   # Detection: regex scan, Luhn check, brand + format detection
+│   ├── validator.py   # Detection: candidate scan, Luhn check, brand + format detection
 │   └── masker.py      # Redaction: masks digits while preserving separators
 ├── tests/
 │   ├── test_validator.py
@@ -70,17 +70,29 @@ print(redact_text(text))
 
 | Function | Returns | Description |
 |---|---|---|
-| `scan_text_advanced(text)` | `list[dict]` | Finds Luhn-valid 15–16 digit card numbers in `text`. Each result has `original` (the text as it appeared), `cleaned` (digits only), `brand` and `style`. Repeated numbers are reported once. |
+| `scan_text_advanced(text, known_brands_only=False)` | `list[dict]` | Finds Luhn-valid 13–19 digit card numbers in `text`. Each result has `original` (the text as it appeared), `cleaned` (digits only), `brand` and `style`. Repeated numbers are reported once. |
 | `is_luhn_valid(card_number)` | `bool` | Runs the Luhn checksum. Non-digit characters are ignored. |
-| `detect_card_brand(number)` | `str` | Identifies the network from the prefix: `"Visa"`, `"Mastercard"`, `"American Express"`, `"Discover"` or `"Unknown Card Network"`. |
+| `detect_card_brand(number)` | `str` | Identifies the network from the prefix: `"Visa"`, `"Mastercard"`, `"American Express"`, `"Discover"`, `"JCB"`, `"Diners Club"`, `"UnionPay"` or `"Unknown Card Network"`. |
 | `analyze_context(original_match)` | `str` | Describes how the number was formatted (raw, dashes, spaces, Amex-style spaces or mixed). |
+
+> [!NOTE]
+> The scanner checks 13–19 digit numbers, the full range of card lengths networks issue. Earlier versions only checked 15–16 digits. The wider range catches more real cards, such as 14-digit Diners Club and 19-digit Visa numbers. It also means more non-card numbers (account, tracking or reference numbers) that happen to pass the Luhn check may be flagged and masked.
 
 ### `cardscan.masker`
 
 | Function | Returns | Description |
 |---|---|---|
-| `redact_text(text)` | `str` | Returns `text` with every detected card number masked. |
+| `redact_text(text, known_brands_only=False)` | `str` | Returns `text` with every detected card number masked. |
 | `mask_card_number(original_match)` | `str` | Replaces every digit except the last four with `X`. Separators are left in place. |
+
+### Reducing false positives
+
+`scan_text_advanced` and `redact_text` both accept `known_brands_only=True`. With it set, numbers whose prefix doesn't match a known card network are ignored. This cuts down on order numbers and serials that happen to pass the Luhn check, but cards from networks the scanner doesn't recognise will be left unmasked.
+
+```python
+redact_text("visa 4111111111111111 serial 9000000000000001", known_brands_only=True)
+# 'visa XXXXXXXXXXXX1111 serial 9000000000000001'
+```
 
 ## Running the tests
 
@@ -97,13 +109,11 @@ pip install -e ".[test]"
 pytest
 ```
 
-All card numbers in the tests and demo are published network test numbers, not real cards.
+All card numbers in the tests and demo are published network test numbers or made-up values that only pass the Luhn check. None are real cards.
 
 ## Known limitations
 
-- Only 15- and 16-digit numbers are reported. Valid 13- and 19-digit cards (some Visa, Maestro and UnionPay numbers) are skipped.
-- Brand detection is approximate. Mastercard's 2-series check accepts `22`–`27`, while the real range is `2221`–`2720`. Discover's `644`–`649` and `622126`–`622925` ranges aren't recognised. JCB, Diners Club and UnionPay come back as `Unknown Card Network`.
-- Detection relies on a regex plus the Luhn check, so a long number that happens to pass Luhn (about 1 in 10 random numbers) will be masked even if it isn't a card.
+- Detection relies on digit patterns plus the Luhn check, so by default a long number that happens to pass Luhn (about 1 in 10 random numbers) will be masked even if it isn't a card. Use `known_brands_only=True` to narrow this (see [Reducing false positives](#reducing-false-positives)).
 
 ## License
 
