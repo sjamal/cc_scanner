@@ -24,6 +24,25 @@ def detect_card_brand(number: str) -> str:
         return "Discover"
     return "Unknown Card Network"
 
+def _find_candidates(text: str) -> list:
+    """Splits separator-joined digit runs into the longest Luhn-valid 13-19 digit spans of whole digit groups."""
+    candidates = []
+    for run in re.finditer(r'\d(?:[ -]*\d)*', text):
+        run_text = run.group()
+        groups = [m.span() for m in re.finditer(r'\d+', run_text)]
+        start = 0
+        while start < len(groups):
+            for end in range(len(groups) - 1, start - 1, -1):
+                candidate = run_text[groups[start][0]:groups[end][1]]
+                digit_count = sum(c.isdigit() for c in candidate)
+                if 13 <= digit_count <= 19 and is_luhn_valid(candidate):
+                    candidates.append(candidate)
+                    start = end + 1
+                    break
+            else:
+                start += 1
+    return candidates
+
 def analyze_context(original_match: str) -> str:
     """Deduces how the user formatted their input context."""
     if '-' in original_match and ' ' in original_match:
@@ -36,15 +55,14 @@ def analyze_context(original_match: str) -> str:
 
 def scan_text_advanced(text: str) -> list:
     """V2: Scans text for numbers hidden anywhere, returning structural context dicts."""
-    cc_pattern = re.compile(r'(?:\d[ -]*?){13,19}')
-    found_potentials = cc_pattern.findall(text)
+    found_potentials = _find_candidates(text)
     
     valid_cards = []
     processed = set()
 
     for potential in found_potentials:
         cleaned_number = re.sub(r'\D', '', potential)
-        if 15 <= len(cleaned_number) <= 16 and cleaned_number not in processed:
+        if 13 <= len(cleaned_number) <= 19 and cleaned_number not in processed:
             if is_luhn_valid(cleaned_number):
                 processed.add(cleaned_number)
                 valid_cards.append({

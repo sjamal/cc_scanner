@@ -70,7 +70,7 @@ print(redact_text(text))
 
 | Function | Returns | Description |
 |---|---|---|
-| `scan_text_advanced(text)` | `list[dict]` | Finds Luhn-valid 15–16 digit card numbers in `text`. Each result has `original` (the text as it appeared), `cleaned` (digits only), `brand` and `style`. Repeated numbers are reported once. |
+| `scan_text_advanced(text)` | `list[dict]` | Finds Luhn-valid 13–19 digit card numbers in `text`. Each result has `original` (the text as it appeared), `cleaned` (digits only), `brand` and `style`. Repeated numbers are reported once. |
 | `is_luhn_valid(card_number)` | `bool` | Runs the Luhn checksum. Non-digit characters are ignored. |
 | `detect_card_brand(number)` | `str` | Identifies the network from the prefix: `"Visa"`, `"Mastercard"`, `"American Express"`, `"Discover"` or `"Unknown Card Network"`. |
 | `analyze_context(original_match)` | `str` | Describes how the number was formatted (raw, dashes, spaces, Amex-style spaces or mixed). |
@@ -101,7 +101,6 @@ All card numbers in the tests and demo are published network test numbers, not r
 
 ## Known limitations
 
-- Only 15- and 16-digit numbers are reported. Valid 13- and 19-digit cards (some Visa, Maestro and UnionPay numbers) are skipped.
 
 - Mastercard's 2-series check accepts `22`–`27`, while the real range is `2221`–`2720`.
 
