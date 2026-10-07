@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cardscan"
+version = "0.1.0"
+description = "Detect and mask credit card numbers in unstructured text."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.9"
+dependencies = []
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[tool.setuptools]
+packages = ["cardscan"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
