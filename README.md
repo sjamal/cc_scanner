@@ -2,6 +2,8 @@
 
 A lightweight, dependency-free Python library and command-line tool for scanning unstructured text (chat logs, form submissions, support tickets) to find credit card numbers someone pasted by accident and mask them.
 
+Useful for keeping stray payment or credit card numbers out of logs, tickets and exports, which reduces what falls into PCI DSS scope. Masking keeps only the last four digits, in line with the PCI DSS display rule. This tool supports compliance work; it doesn't make a system compliant on its own.
+
 ```text
 In:  But user typed cardis4111111111111111now and amex 3782-822463-10005 together.
 Out: But user typed cardisXXXXXXXXXXXX1111now and amex XXXX-XXXXXX-X0005 together.
