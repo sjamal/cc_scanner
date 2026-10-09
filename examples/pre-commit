@@ -1,0 +1,9 @@
+#!/bin/sh
+# Git pre-commit hook: block commits that add card numbers.
+# Install: cp examples/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+
+if git diff --cached -U0 --diff-filter=ACM | grep '^+' | grep -v '^+++' | cardscan --check; then
+    exit 0
+fi
+echo "pre-commit: possible card number in staged changes. Run 'git diff --cached | cardscan --report'." >&2
+exit 1
