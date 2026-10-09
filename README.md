@@ -58,6 +58,8 @@ To use it from another project or as a command, install it in editable mode:
 pip install -e .
 ```
 
+The package is named `cc-scanner`. The import name and command are `cardscan`.
+
 ## Command-line usage
 
 `pip install -e .` adds a `cardscan` command. Without installing, use `python3 -m cardscan` from the project folder.
