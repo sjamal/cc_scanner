@@ -1,6 +1,6 @@
 # Credit Card Detection and Masking Scanner
 
-A lightweight, dependency-free Python library for scanning unstructured text (chat logs, form submissions, support tickets) to find credit card numbers someone pasted by accident and mask them.
+A lightweight, dependency-free Python library and command-line tool for scanning unstructured text (chat logs, form submissions, support tickets) to find credit card numbers someone pasted by accident and mask them.
 
 ```text
 In:  But user typed cardis4111111111111111now and amex 3782-822463-10005 together.
@@ -14,6 +14,7 @@ Out: But user typed cardisXXXXXXXXXXXX1111now and amex XXXX-XXXXXX-X0005 togethe
 - Checks every candidate with the [Luhn algorithm](https://en.wikipedia.org/wiki/Luhn_algorithm), so most ordinary serial and order numbers aren't masked.
 - Identifies the card network (Visa, Mastercard, American Express, Discover, JCB, Diners Club, UnionPay).
 - Masks every digit except the last four and keeps the original spaces and dashes.
+- Command-line tool that reads files or piped input line by line, so file size doesn't affect memory use.
 
 ## Project layout
 
@@ -22,10 +23,16 @@ cc_scanner/
 ├── cardscan/
 │   ├── __init__.py    # Public API re-exports
 │   ├── validator.py   # Detection: candidate scan, Luhn check, brand + format detection
-│   └── masker.py      # Redaction: masks digits while preserving separators
+│   ├── masker.py      # Redaction: masks digits while preserving separators
+│   ├── cli.py         # Command-line tool
+│   └── __main__.py    # Enables `python -m cardscan`
+├── examples/
+│   ├── sample_chat.txt  # Sample input with test card numbers
+│   └── pre-commit       # Git hook that blocks commits containing card numbers
 ├── tests/
 │   ├── test_validator.py
-│   └── test_masker.py
+│   ├── test_masker.py
+│   └── test_cli.py
 ├── main.py            # Runnable demo
 ├── pyproject.toml
 └── LICENSE
@@ -43,13 +50,78 @@ cd cc_scanner
 python3 main.py
 ```
 
-To use it from another project, install it in editable mode:
+To use it from another project or as a command, install it in editable mode:
 
 ```bash
 pip install -e .
 ```
 
-## Usage
+## Command-line usage
+
+`pip install -e .` adds a `cardscan` command. Without installing, use `python3 -m cardscan` from the project folder.
+
+```bash
+cardscan chat.log > chat_clean.log          # Redact a file
+cat chat.log | cardscan > chat_clean.log    # Redact piped input
+cardscan a.txt b.csv > combined_clean.txt   # Redact several files, output joined
+cardscan --report export.csv                # List where cards were found
+cardscan --check upload.txt                 # No output, exit code only
+```
+
+| Option | Effect |
+|---|---|
+| *(none)* | Prints the input with card numbers masked. |
+| `--report` | Prints `file:line: brand (style)` for each card found. Card digits are never printed. |
+| `--check` | Prints nothing. Stops at the first card found. |
+| `--known-brands-only` | Ignores numbers that don't match a known network. See [Reducing false positives](#reducing-false-positives). |
+
+A file name of `-`, or no file name, reads standard input.
+
+Exit codes:
+
+| Code | Meaning |
+|---|---|
+| `0` | No cards found. Redact mode always returns `0` on success. |
+| `1` | `--report` or `--check` found at least one card. |
+| `2` | A file couldn't be read, or the options were invalid. |
+
+Try it on the sample file:
+
+```bash
+cardscan --report examples/sample_chat.txt
+# examples/sample_chat.txt:2: Visa (Standard Spaces)
+# examples/sample_chat.txt:4: American Express (Standard Dashes (e.g., XXXX-XXXX-XXXX-XXXX))
+# examples/sample_chat.txt:5: Mastercard (Raw Continuous Block (No separators))
+```
+
+### Using it with other tools
+
+Any tool that can run a command or pipe text can use `cardscan`.
+
+- **Log files:** `tail -f app.log | cardscan >> app_clean.log`
+- **Spreadsheets:** export to CSV, run `cardscan sheet.csv > sheet_clean.csv`, re-import. Only cell text changes, so the CSV structure stays intact.
+- **Word or PDF documents:** convert to text first (for example `textutil -convert txt doc.docx` on macOS, or `pdftotext file.pdf`), then pipe to `cardscan`.
+- **Git:** [examples/pre-commit](examples/pre-commit) blocks commits whose added lines contain a card number. Install it in a repository with:
+
+  ```bash
+  cp examples/pre-commit .git/hooks/pre-commit
+  chmod +x .git/hooks/pre-commit
+  ```
+
+  The hook needs `cardscan` on the `PATH`.
+- **Scripts and CI:** use `--check` and test the exit code.
+
+  ```bash
+  if ! cardscan --check upload.txt; then
+      echo "Card number found" >&2
+  fi
+  ```
+
+### Large inputs
+
+Input is processed one line at a time and output is written as it goes, so memory use stays flat. A 21 MB, 500,000-line file takes about 2 seconds and under 25 MB of memory on a recent laptop.
+
+## Library usage
 
 ```python
 from cardscan import scan_text_advanced, redact_text
@@ -113,6 +185,7 @@ All card numbers in the tests and demo are published network test numbers or mad
 
 ## Known limitations
 
+- The command-line tool scans one line at a time, so a card number split across two lines isn't detected.
 - Detection relies on digit patterns plus the Luhn check, so by default a long number that happens to pass Luhn (about 1 in 10 random numbers) will be masked even if it isn't a card. Use `known_brands_only=True` to narrow this (see [Reducing false positives](#reducing-false-positives)).
 
 ## License

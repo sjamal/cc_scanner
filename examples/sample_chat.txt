@@ -1,0 +1,6 @@
+[09:14] agent: Thanks for contacting support. How can I help?
+[09:15] customer: my card 4111 1111 1111 1111 was charged twice
+[09:15] agent: Sorry about that. What's the order number?
+[09:16] customer: order 1234567, and i also tried my amex 3782-822463-10005
+[09:17] customer: oh and the old one was5555555555554444expired
+[09:18] agent: Thanks. A refund has been issued.
